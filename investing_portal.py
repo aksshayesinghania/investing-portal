@@ -15,6 +15,15 @@ import streamlit as st
 import yfinance as yf
 import pandas as pd
 import math
+import requests
+
+# Fix for Yahoo Finance blocking cloud server requests
+_session = requests.Session()
+_session.headers.update({
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Accept-Language": "en-US,en;q=0.5",
+})
 
 st.set_page_config(
     page_title="Value Investing Portal",
@@ -190,7 +199,7 @@ def resolve_ticker(query: str):
         for suffix in [".NS", ".BO", ""]:
             ticker = q.upper() + suffix
             try:
-                info = yf.Ticker(ticker).info
+                info = yf.Ticker(ticker, session=_session).info
                 if info.get("regularMarketPrice") or info.get("currentPrice") or info.get("previousClose"):
                     return ticker
             except Exception:
@@ -217,7 +226,7 @@ def get_stmt(stmt, row_name, col=0, default=0):
         return default
 
 def fetch(ticker_symbol: str) -> dict:
-    t = yf.Ticker(ticker_symbol)
+    t = yf.Ticker(ticker_symbol, session=_session)
     info = t.info or {}
     try:
         inc = t.financials
